@@ -7,33 +7,165 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;700&family=Pacifico&display=swap');
-        
-        body { font-family: 'Hind Siliguri', sans-serif; background: #f8fafc; }
-        .brand-font { font-family: 'Pacifico', cursive; }
-        
-        /* কার্ড স্টাইল - কোনো এনিমেশন নেই */
-        .product-card { border-radius: 16px; background: #fff; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
-        
-        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;700&display=swap');
+        body { font-family: 'Hind Siliguri', sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
+        .product-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     </style>
 </head>
-<body class="pb-10">
+<body class="pb-20">
 
-    <div class="bg-red-600 py-2 overflow-hidden shadow-lg border-b border-red-700">
-        <marquee class="font-bold text-white text-sm">📢 ডেলিভারি অফার: ঢাকার ভিতরে ৳৮৫ এবং ঢাকার বাহিরে সারা বাংলাদেশে ৳১৩০ ডেলিভারি চার্জ প্রযোজ্য।</marquee>
+    <div class="bg-red-600 text-white py-2 text-center text-sm font-bold">
+        📢 ডেলিভারি অফার: ঢাকার ভিতরে ৳৮৫ এবং ঢাকার বাহিরে সারা বাংলাদেশে ৳১৩০।
     </div>
 
-    <header class="w-full py-12 bg-gradient-to-tr from-indigo-900 via-indigo-800 to-purple-900 text-white text-center relative">
-        <h1 class="brand-font text-5xl md:text-6xl mb-2">Morad Shopping</h1>
-        <p class="text-indigo-200 mt-2 text-sm md:text-base uppercase tracking-widest">Premium E-Commerce Experience</p>
+    <header class="bg-gradient-to-r from-blue-700 to-purple-800 text-white py-10 text-center shadow-lg">
+        <h1 class="text-4xl font-bold">Morad Shopping</h1>
+        <p class="text-blue-100 text-sm mt-1">সরাসরি গুগল শিট থেকে নিয়ন্ত্রিত প্রিমিয়াম শপ</p>
     </header>
 
-    <nav class="sticky top-0 bg-white shadow-md p-4 flex justify-between items-center z-50 px-6">
-        <div class="relative w-full max-w-md mx-auto">
-            <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
-            <input type="text" id="searchInput" onkeyup="searchProduct()" placeholder="আপনার পছন্দের পণ্যটি খুঁজুন..." class="w-full border border-gray-200 rounded-2xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50">
+    <div class="sticky top-0 bg-white p-4 shadow-md z-40">
+        <div class="max-w-md mx-auto relative">
+            <input type="text" id="searchInput" onkeyup="searchProduct()" placeholder="পণ্য খুঁজুন..." class="w-full border rounded-full py-2 px-10 outline-none focus:ring-2 focus:ring-blue-500">
+            <i class="fas fa-search absolute left-4 top-3 text-gray-400"></i>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto p-4 grid grid-cols-2 md:grid-cols-4 gap-4" id="productGrid">
+        <p class="col-span-full text-center py-10 text-gray-500">পণ্য লোড হচ্ছে, দয়া করে অপেক্ষা করুন...</p>
+    </div>
+
+    <div id="orderModal" class="modal">
+        <div class="bg-white p-6 rounded-lg w-11/12 max-w-md">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2">অর্ডার কনফার্ম করুন</h2>
+            <div id="orderItemInfo" class="mb-4 p-3 bg-blue-50 rounded text-sm text-blue-800"></div>
+            
+            <div class="space-y-3">
+                <input type="text" id="userName" placeholder="আপনার নাম" class="w-full border p-2 rounded">
+                <input type="tel" id="userPhone" placeholder="মোবাইল নাম্বার" class="w-full border p-2 rounded">
+                <textarea id="userAddress" placeholder="পুরো ঠিকানা" class="w-full border p-2 rounded h-20"></textarea>
+            </div>
+            
+            <div class="flex gap-2 mt-5">
+                <button onclick="closeModal()" class="flex-1 bg-gray-200 py-2 rounded font-bold">বাতিল</button>
+                <button onclick="sendOrder()" class="flex-1 bg-blue-600 text-white py-2 rounded font-bold">অর্ডার দিন</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // আপনার দেওয়া তথ্যগুলো এখানে সেট করা হয়েছে
+        const csvUrl = "https://docs.google.com/spreadsheets/d/1QgAIRvwT1MBddzD_2xa_3vtvLqytD61Avb1TJfJ0SQc/export?format=csv";
+        const teleToken = "8759355717:AAEB33D_mMtVh4_mjGReF9wVJ7-hYQ1hKQw";
+        const teleChatId = "7211983994";
+
+        let products = [];
+        let currentItem = null;
+
+        // গুগল শিট থেকে ডাটা আনা
+        async function loadProducts() {
+            try {
+                const res = await fetch(csvUrl);
+                const data = await res.text();
+                const rows = data.split("\n").slice(1); // প্রথম লাইন বাদ (Header)
+
+                products = rows.map(row => {
+                    const cols = row.split(",");
+                    if(cols.length >= 4 && cols[1].trim() !== "") {
+                        return {
+                            id: cols[0].trim(),
+                            name: cols[1].trim(),
+                            price: cols[2].trim(),
+                            image: cols[3].trim()
+                        };
+                    }
+                    return null;
+                }).filter(p => p !== null);
+
+                displayProducts(products);
+            } catch (err) {
+                document.getElementById('productGrid').innerHTML = "ডাটা লোড করতে সমস্যা হয়েছে।";
+            }
+        }
+
+        // পণ্য প্রদর্শন করা
+        function displayProducts(list) {
+            const grid = document.getElementById('productGrid');
+            if(list.length === 0) {
+                grid.innerHTML = "<p class='col-span-full text-center py-10'>কোনো পণ্য পাওয়া যায়নি।</p>";
+                return;
+            }
+
+            grid.innerHTML = list.map(p => `
+                <div class="product-card p-3 flex flex-col">
+                    <img src="${p.image}" class="w-full h-40 object-cover rounded-lg mb-2" onerror="this.src='https://via.placeholder.com/150'">
+                    <h3 class="text-sm font-bold text-gray-700 h-10 overflow-hidden">${p.name}</h3>
+                    <p class="text-blue-700 font-bold text-lg mt-1">৳${p.price}</p>
+                    <button onclick="openOrder('${p.id}')" class="mt-3 bg-blue-600 text-white py-2 rounded-lg text-xs font-bold uppercase tracking-wider">অর্ডার করুন</button>
+                    <button class="mt-1 border border-blue-600 text-blue-600 py-2 rounded-lg text-xs font-bold uppercase">কার্টে রাখুন</button>
+                </div>
+            `).join('');
+        }
+
+        // অর্ডার পপআপ খোলা
+        function openOrder(id) {
+            currentItem = products.find(p => p.id === id);
+            document.getElementById('orderItemInfo').innerHTML = `📦 <b>পণ্য:</b> ${currentItem.name}<br>💰 <b>দাম:</b> ৳${currentItem.price}`;
+            document.getElementById('orderModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('orderModal').classList.remove('active');
+        }
+
+        // টেলিগ্রামে অর্ডার পাঠানো
+        async function sendOrder() {
+            const name = document.getElementById('userName').value;
+            const phone = document.getElementById('userPhone').value;
+            const addr = document.getElementById('userAddress').value;
+
+            if(!name || !phone || !addr) {
+                alert("সবগুলো ঘর পূরণ করুন!");
+                return;
+            }
+
+            const msg = `🛒 *নতুন অর্ডার*\n\n👤 নাম: ${name}\n📞 ফোন: ${phone}\n🏠 ঠিকানা: ${addr}\n📦 পণ্য: ${currentItem.name}\n💰 দাম: ৳${currentItem.price}`;
+
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${teleToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: teleChatId,
+                        text: msg,
+                        parse_mode: 'Markdown'
+                    })
+                });
+
+                if(response.ok) {
+                    alert("অর্ডারটি সফলভাবে পাঠানো হয়েছে!");
+                    closeModal();
+                } else {
+                    alert("অর্ডার পাঠাতে সমস্যা হয়েছে। টেলিগ্রাম সেটিংস চেক করুন।");
+                }
+            } catch (e) {
+                alert("ইন্টারনেট সমস্যা!");
+            }
+        }
+
+        // সার্চ ফাংশন
+        function searchProduct() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = products.filter(p => p.name.toLowerCase().includes(term));
+            displayProducts(filtered);
+        }
+
+        // পেজ লোড হলে ডাটা আনা শুরু করবে
+        loadProducts();
+    </script>
+</body>
+</html>
         </div>
         </nav>
 
