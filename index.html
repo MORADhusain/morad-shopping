@@ -7,33 +7,149 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;600;700&family=Pacifico&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;700&family=Pacifico&display=swap');
         
         body { font-family: 'Hind Siliguri', sans-serif; background: #f8fafc; }
-        
-        /* প্রিমিয়াম ফন্ট স্টাইল */
         .brand-font { font-family: 'Pacifico', cursive; }
         
-        .product-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 16px; background: #fff; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .product-card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        /* কার্ড স্টাইল - কোনো এনিমেশন নেই */
+        .product-card { border-radius: 16px; background: #fff; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
         
         .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
         .modal.active { display: flex; }
-        
-        .cart-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; border: 2px solid white; }
-        
-        .custom-checkbox { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #6366f1; appearance: none; cursor: pointer; transition: 0.2s; position: relative; }
-        .custom-checkbox:checked { background-color: #6366f1; }
-        .custom-checkbox:checked::after { content: '\f00c'; font-family: 'Font Awesome 5 Free'; font-weight: 900; color: white; font-size: 12px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
     </style>
 </head>
 <body class="pb-10">
 
     <div class="bg-red-600 py-2 overflow-hidden shadow-lg border-b border-red-700">
-        <marquee class="font-bold text-white text-sm">📢 ডেলিভারি অফার: ঢাকার ভিতরে ৳৮৫ এবং ঢাকার বাহিরে সারা বাংলাদেশে ৳১৩০ ডেলিভারি চার্জ প্রযোজ্য। দ্রুত অর্ডার করুন!</marquee>
+        <marquee class="font-bold text-white text-sm">📢 ডেলিভারি অফার: ঢাকার ভিতরে ৳৮৫ এবং ঢাকার বাহিরে সারা বাংলাদেশে ৳১৩০ ডেলিভারি চার্জ প্রযোজ্য।</marquee>
     </div>
 
-    <header class="w-full py-12 bg-gradient-to-tr from-indigo-900 via-indigo-800 to-purple-900 text-white text-center relative overflow-hidden">
+    <header class="w-full py-12 bg-gradient-to-tr from-indigo-900 via-indigo-800 to-purple-900 text-white text-center relative">
+        <h1 class="brand-font text-5xl md:text-6xl mb-2">Morad Shopping</h1>
+        <p class="text-indigo-200 mt-2 text-sm md:text-base uppercase tracking-widest">Premium E-Commerce Experience</p>
+    </header>
+
+    <nav class="sticky top-0 bg-white shadow-md p-4 flex justify-between items-center z-50 px-6">
+        <div class="relative w-full max-w-md mx-auto">
+            <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+            <input type="text" id="searchInput" onkeyup="searchProduct()" placeholder="আপনার পছন্দের পণ্যটি খুঁজুন..." class="w-full border border-gray-200 rounded-2xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50">
+        </div>
+        </nav>
+
+    <main class="max-w-7xl mx-auto p-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="productGrid">
+        </main>
+
+    <div id="orderModal" class="modal">
+        <div class="bg-white p-8 rounded-[2rem] w-11/12 max-w-md relative border border-gray-100">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">অর্ডার কনফার্ম করুন</h2>
+                <button onclick="closeModal()" class="bg-gray-100 p-2 rounded-full"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="orderItemInfo" class="text-sm bg-indigo-50 p-4 rounded-2xl mb-6 text-indigo-900 border border-indigo-100"></div>
+            <div class="space-y-4">
+                <input type="text" id="userName" placeholder="আপনার পুরো নাম" class="w-full border border-gray-200 p-4 rounded-2xl outline-none focus:border-indigo-500 bg-gray-50">
+                <input type="tel" id="userPhone" placeholder="মোবাইল নাম্বার" class="w-full border border-gray-200 p-4 rounded-2xl outline-none focus:border-indigo-500 bg-gray-50">
+                <textarea id="userAddress" placeholder="ডেলিভারি ঠিকানা" class="w-full border border-gray-200 p-4 rounded-2xl outline-none focus:border-indigo-500 bg-gray-50 h-28"></textarea>
+            </div>
+            <button onclick="confirmFinalOrder()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-bold mt-8 hover:bg-indigo-700 transition-all text-lg">অর্ডার প্লেস করুন</button>
+        </div>
+    </div>
+
+    <script>
+        const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/1QgAIRvwT1MBddzD_2xa_3vtvLqytD61Avb1TJfJ0SQc/export?format=csv";
+        const botToken = "8759355717:AAEB33D_mMtVh4_mjGReF9wVJ7-hYQ1hKQw";
+        const chatId = "7211983994";
+
+        let allProducts = [];
+        let selectedProduct = null;
+
+        async function fetchProducts() {
+            try {
+                const response = await fetch(sheetCsvUrl);
+                const data = await response.text();
+                const rows = data.split('\n').filter(row => row.trim() !== "").slice(1);
+                
+                allProducts = rows.map(row => {
+                    const columns = row.split(',');
+                    return {
+                        id: columns[0]?.trim(),
+                        name: columns[1]?.trim(),
+                        price: columns[2]?.trim(),
+                        img: columns[3]?.trim()
+                    };
+                }).filter(p => p.name); // শুধু নাম থাকা পণ্যগুলো নিবে
+
+                renderProducts(allProducts);
+            } catch (error) {
+                console.error("Error loading products");
+            }
+        }
+
+        function renderProducts(products) {
+            const grid = document.getElementById('productGrid');
+            if (products.length === 0) {
+                grid.innerHTML = "<p class='col-span-full text-center py-10'>কোন পণ্য পাওয়া যায়নি।</p>";
+                return;
+            }
+            grid.innerHTML = products.map(p => `
+                <div class="product-card p-4 flex flex-col shadow-sm">
+                    <div class="relative overflow-hidden rounded-2xl h-52 bg-gray-50">
+                        <img src="${p.img}" class="w-full h-full object-cover">
+                        <div class="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded text-[10px] font-bold">ID: ${p.id}</div>
+                    </div>
+                    <div class="mt-4 flex-1">
+                        <h3 class="font-bold text-gray-800 text-sm h-10 overflow-hidden">${p.name}</h3>
+                        <p class="text-indigo-600 font-bold text-lg mt-1">৳${p.price}</p>
+                    </div>
+                    <div class="mt-4 space-y-2">
+                        <button onclick="openOrderModal('${p.id}')" class="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-bold">সরাসরি অর্ডার</button>
+                        <button class="w-full border border-indigo-600 text-indigo-600 py-3 rounded-xl text-sm font-bold">কার্টে যোগ করুন</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openOrderModal(id) {
+            selectedProduct = allProducts.find(p => p.id === id);
+            document.getElementById('orderItemInfo').innerHTML = `📦 <strong>নির্বাচিত পণ্য:</strong> ${selectedProduct.name}<br>💰 <strong>মূল্য:</strong> ৳${selectedProduct.price}`;
+            document.getElementById('orderModal').classList.add('active');
+        }
+
+        function closeModal() { document.getElementById('orderModal').classList.remove('active'); }
+
+        async function confirmFinalOrder() {
+            const name = document.getElementById('userName').value.trim();
+            const phone = document.getElementById('userPhone').value.trim();
+            const address = document.getElementById('userAddress').value.trim();
+
+            if(!name || !phone || !address) { alert("সব তথ্য দিন!"); return; }
+
+            const text = `🛒 নতুন অর্ডার:\n👤 নাম: ${name}\n📞 ফোন: ${phone}\n🏠 ঠিকানা: ${address}\n📦 পণ্য: ${selectedProduct.name}\n💰 মূল্য: ৳${selectedProduct.price}`;
+
+            try {
+                await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: chatId, text: text })
+                });
+                alert("অর্ডার সফল হয়েছে!");
+                closeModal();
+            } catch (e) {
+                alert("দুঃখিত, আবার চেষ্টা করুন।");
+            }
+        }
+
+        function searchProduct() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(q));
+            renderProducts(filtered);
+        }
+
+        fetchProducts();
+    </script>
+</body>
+</html>
         <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
         <h1 class="brand-font text-5xl md:text-6xl mb-2 drop-shadow-lg tracking-wide">Morad Shopping</h1>
         <p class="text-indigo-200 mt-2 text-sm md:text-base font-light tracking-widest uppercase">Premium E-Commerce Experience</p>
