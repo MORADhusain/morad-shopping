@@ -39,9 +39,11 @@
         .dark nav { background: rgba(30, 41, 59, 0.95) !important; border-color: #334155; }
         .dark input, .dark textarea { background: #334155 !important; border-color: #475569 !important; color: white !important; }
 
-        /* রশিদের বিশেষ স্টাইল */
         #captureArea { background: white !important; color: #1e293b !important; }
         .receipt-item-img { width: 40px; height: 40px; object-fit: contain; background: #f8fafc; border-radius: 6px; }
+        
+        /* হিস্ট্রি কার্ড স্টাইল */
+        .history-card { border-left: 4px solid #6366f1; }
     </style>
 </head>
 <body class="pb-10">
@@ -60,15 +62,22 @@
     </header>
 
     <nav class="sticky top-0 bg-white/95 backdrop-blur-md shadow-md p-4 flex justify-between items-center z-50 px-6 border-b border-gray-100">
-        <div class="relative w-3/4 max-w-md">
+        <div class="relative w-2/3 max-w-md">
             <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
             <input type="text" id="searchInput" onkeyup="searchProduct()" placeholder="পণ্য খুঁজুন..." class="w-full border border-gray-200 rounded-2xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50">
         </div>
-        <div class="relative cursor-pointer" onclick="openCart()">
-            <div class="bg-indigo-50 p-3 rounded-2xl hover:bg-indigo-100 transition-colors">
-                <i class="fas fa-shopping-basket text-2xl text-indigo-600"></i>
+        <div class="flex gap-3">
+            <div class="relative cursor-pointer" onclick="openHistory()">
+                <div class="bg-amber-50 p-3 rounded-2xl hover:bg-amber-100 transition-colors">
+                    <i class="fas fa-history text-2xl text-amber-600"></i>
+                </div>
             </div>
-            <span id="cartCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white">0</span>
+            <div class="relative cursor-pointer" onclick="openCart()">
+                <div class="bg-indigo-50 p-3 rounded-2xl hover:bg-indigo-100 transition-colors">
+                    <i class="fas fa-shopping-basket text-2xl text-indigo-600"></i>
+                </div>
+                <span id="cartCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white">0</span>
+            </div>
         </div>
     </nav>
 
@@ -89,6 +98,17 @@
                 </div>
                 <button onclick="orderSelectedItems()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition-all">অর্ডার শুরু করুন</button>
             </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal" onclick="closeModal('historyModal')">
+        <div class="bg-white p-6 rounded-[2rem] w-11/12 max-w-xl max-h-[85vh] flex flex-col relative" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 class="text-2xl font-black text-amber-600">অর্ডার হিস্ট্রি</h2>
+                <button onclick="closeModal('historyModal')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div id="historyList" class="flex-1 overflow-y-auto space-y-4 pr-2">
+                </div>
         </div>
     </div>
 
@@ -119,13 +139,11 @@
                     <p class="text-[10px] text-gray-400 mt-1" id="ticketTime"></p>
                 </div>
                 
-                <div id="userSlipInfo" class="text-[12px] space-y-1 mb-4 border-b pb-4 border-gray-100">
-                    </div>
+                <div id="userSlipInfo" class="text-[12px] space-y-1 mb-4 border-b pb-4 border-gray-100"></div>
 
                 <div class="mb-2">
                     <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">অর্ডারকৃত পণ্য তালিকা:</p>
-                    <div id="receiptItemsList" class="space-y-3">
-                        </div>
+                    <div id="receiptItemsList" class="space-y-3"></div>
                 </div>
 
                 <div class="mt-4 pt-4 border-t-2 border-dashed border-indigo-100 flex justify-between items-center">
@@ -152,6 +170,7 @@
 
         let allProducts = [];
         let cart = JSON.parse(localStorage.getItem('morad_cart')) || [];
+        let orderHistory = JSON.parse(localStorage.getItem('morad_history')) || [];
         let orderContext = [];
 
         function toggleTheme() {
@@ -260,7 +279,6 @@
             const fullDateTime = `${now.toLocaleDateString('bn-BD')} | ${now.toLocaleTimeString('bn-BD')}`;
             const total = orderContext.reduce((sum, p) => sum + getNumericPrice(p.price), 0);
             
-            // টেলিগ্রাম মেসেজ ফরম্যাট
             const productNamesForBot = orderContext.map(p => `• ${p.name} - ৳${p.price}`).join('\n');
             const message = `🛒 **নতুন অর্ডার**\n\n👤 নাম: ${name}\n📞 ফোন: ${phone}\n🏠 ঠিকানা: ${address}\n\n📦 পণ্য তালিকা:\n${productNamesForBot}\n\n💰 মোট: ৳${total.toLocaleString('bn-BD')}\n⏰ সময়: ${fullDateTime}`;
 
@@ -270,13 +288,20 @@
                     body: JSON.stringify({ chat_id: chatId, text: message })
                 });
 
-                // রশিদ আপডেট করা (ইউজারের চাওয়া অনুযায়ী পণ্য তালিকা ও ছবিসহ)
+                // হিস্ট্রি সেভ করা
+                const newHistoryEntry = {
+                    date: fullDateTime,
+                    customer: name,
+                    phone: phone,
+                    address: address,
+                    items: orderContext,
+                    total: total
+                };
+                orderHistory.unshift(newHistoryEntry);
+                localStorage.setItem('morad_history', JSON.stringify(orderHistory));
+
                 document.getElementById('ticketTime').innerText = `অর্ডার সময়: ${fullDateTime}`;
-                document.getElementById('userSlipInfo').innerHTML = `
-                    <p><strong>গ্রাহক:</strong> ${name}</p>
-                    <p><strong>ফোন:</strong> ${phone}</p>
-                    <p><strong>ঠিকানা:</strong> ${address}</p>
-                `;
+                document.getElementById('userSlipInfo').innerHTML = `<p><strong>গ্রাহক:</strong> ${name}</p><p><strong>ফোন:</strong> ${phone}</p><p><strong>ঠিকানা:</strong> ${address}</p>`;
                 
                 document.getElementById('receiptItemsList').innerHTML = orderContext.map(p => `
                     <div class="flex items-center gap-3 border-b border-gray-50 pb-2">
@@ -290,18 +315,50 @@
 
                 document.getElementById('receiptTotal').innerText = `৳${total.toLocaleString('bn-BD')}`;
                 
-                // অর্ডার সফল হলে কার্ট পরিষ্কার করা
                 orderContext.forEach(op => {
                     const idx = cart.findIndex(cp => cp.cartId === op.cartId);
                     if(idx > -1) cart.splice(idx, 1);
                 });
-                localStorage.setItem('morad_cart', JSON.stringify(cart));
+                                localStorage.setItem('morad_cart', JSON.stringify(cart));
                 updateCartCount();
 
                 closeModal('orderModal');
                 document.getElementById('successModal').classList.add('active');
             } catch (e) { alert("দুঃখিত, কানেকশনে সমস্যা হয়েছে!"); }
             finally { btn.innerText = "অর্ডার সম্পন্ন করুন"; btn.disabled = false; }
+        }
+
+        // অর্ডার হিস্ট্রি দেখানোর ফাংশন
+        function openHistory() {
+            const list = document.getElementById('historyList');
+            if(orderHistory.length === 0) {
+                list.innerHTML = `<div class="text-center py-20 text-gray-300"><i class="fas fa-box-open text-6xl mb-4"></i><p>এখনো কোনো অর্ডার করা হয়নি!</p></div>`;
+            } else {
+                list.innerHTML = orderHistory.map((order, idx) => `
+                    <div class="history-card bg-gray-50 p-4 rounded-2xl shadow-sm border border-gray-100 mb-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">${order.date}</p>
+                                <p class="text-xs text-gray-600 mt-1"><i class="fas fa-map-marker-alt mr-1"></i>${order.address}</p>
+                            </div>
+                            <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-bold">৳${order.total.toLocaleString('bn-BD')}</span>
+                        </div>
+                        <div class="space-y-2">
+                            ${order.items.map(item => `
+                                <div class="flex items-center gap-3 bg-white p-2 rounded-lg border border-gray-100">
+                                    <img src="${item.img}" class="w-10 h-10 object-contain">
+                                    <div class="flex-1">
+                                        <p class="text-[10px] font-bold text-gray-800 line-clamp-1">${item.name}</p>
+                                        <p class="text-indigo-600 font-bold text-[10px]">৳${item.price}</p>
+                                    </div>
+                                    <button onclick="initiateDirectOrder('${item.id}')" class="bg-indigo-600 text-white text-[9px] px-3 py-1.5 rounded-lg font-bold">Order Now</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('historyModal').classList.add('active');
         }
 
         function downloadSlip() {
