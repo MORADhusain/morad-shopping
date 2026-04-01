@@ -25,6 +25,10 @@
         .custom-checkbox { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #6366f1; appearance: none; cursor: pointer; transition: 0.2s; position: relative; }
         .custom-checkbox:checked { background-color: #6366f1; }
         .custom-checkbox:checked::after { content: '\f00c'; font-family: 'Font Awesome 5 Free'; font-weight: 900; color: white; font-size: 12px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        /* Image Zoom Animation */
+        #imgPreviewModal img { animation: zoomIn 0.3s ease-out; }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body class="pb-10">
@@ -62,6 +66,13 @@
             <p class="text-gray-500 font-medium">ইনভেন্টরি চেক করা হচ্ছে...</p>
         </div>
     </main>
+
+    <div id="imgPreviewModal" class="modal" onclick="closeModal('imgPreviewModal')">
+        <div class="relative max-w-4xl max-h-[90vh] p-2" onclick="event.stopPropagation()">
+            <button onclick="closeModal('imgPreviewModal')" class="absolute -top-4 -right-4 bg-white text-indigo-600 w-10 h-10 rounded-full shadow-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all z-10"><i class="fas fa-times"></i></button>
+            <img id="previewImg" src="" class="max-w-full max-h-[85vh] rounded-3xl shadow-2xl object-contain border-4 border-white">
+        </div>
+    </div>
 
     <div id="orderModal" class="modal">
         <div class="bg-white p-8 rounded-[2rem] w-11/12 max-w-md shadow-2xl relative border border-gray-100">
@@ -117,7 +128,7 @@
 
         let allProducts = [];
         let cart = JSON.parse(localStorage.getItem('morad_cart')) || [];
-        let orderContext = []; // অর্ডার করার জন্য সাময়িক তথ্য
+        let orderContext = [];
 
         async function fetchProducts() {
             try {
@@ -144,8 +155,8 @@
             const grid = document.getElementById('productGrid');
             grid.innerHTML = products.map(p => `
                 <div class="product-card p-4 flex flex-col group">
-                    <div class="relative overflow-hidden rounded-2xl h-52 bg-gray-50 border border-gray-100">
-                        <img src="${p.img}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    <div class="relative overflow-hidden rounded-2xl h-52 bg-gray-50 border border-gray-100 cursor-zoom-in flex items-center justify-center" onclick="previewImage('${p.img}')">
+                        <img src="${p.img}" class="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110 p-2">
                         <div class="absolute top-2 right-2 bg-white/90 px-3 py-1 rounded-full text-xs font-bold text-indigo-600 border border-indigo-50 shadow-sm">ID: ${p.id}</div>
                     </div>
                     <div class="mt-4 flex-1">
@@ -161,9 +172,14 @@
             updateCartCount();
         }
 
+        function previewImage(url) {
+            document.getElementById('previewImg').src = url;
+            document.getElementById('imgPreviewModal').classList.add('active');
+        }
+
         function addToCart(id) {
             const p = allProducts.find(item => item.id === id);
-            cart.push({...p, cartId: Date.now() + Math.random()}); // ডুপ্লিকেট পণ্য আলাদা করতে ইউনিক আইডি
+            cart.push({...p, cartId: Date.now() + Math.random()});
             localStorage.setItem('morad_cart', JSON.stringify(cart));
             updateCartCount();
             alert("পণ্যটি সফলভাবে কার্টে যোগ করা হয়েছে!");
@@ -181,7 +197,7 @@
                 list.innerHTML = cart.map((p, index) => `
                     <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100 group relative">
                         <input type="checkbox" class="custom-checkbox cart-select-item" data-index="${index}">
-                        <img src="${p.img}" class="w-16 h-16 rounded-xl object-cover border border-white shadow-sm">
+                        <img src="${p.img}" class="w-16 h-16 rounded-xl object-contain border border-white bg-white shadow-sm cursor-pointer" onclick="previewImage('${p.img}')">
                         <div class="flex-1">
                             <h4 class="text-sm font-bold text-gray-800 leading-tight">${p.name}</h4>
                             <p class="text-indigo-600 font-black">৳${p.price}</p>
@@ -258,7 +274,6 @@
 
                 if(response.ok) {
                     alert("অভিনন্দন! আপনার অর্ডারটি সফলভাবে গ্রহণ করা হয়েছে।");
-                    // কার্ট থেকে অর্ডার করা পণ্য সরিয়ে ফেলা (যদি কার্ট থেকে অর্ডার হয়ে থাকে)
                     orderContext.forEach(op => {
                         const idx = cart.findIndex(cp => cp.cartId === op.cartId);
                         if(idx > -1) cart.splice(idx, 1);
