@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MORAD SHOPPING - শ্রেষ্ঠ গ্যাজেট শপ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;600;700&display=swap');
+        body { font-family: 'Hind Siliguri', sans-serif; background: #f0f2f5; }
+        .product-card { transition: all 0.3s ease; border: 1px solid #ddd; border-radius: 12px; overflow: hidden; background: #fff; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .cart-badge { position: absolute; top: -5px; right: -5px; background: #ff3e3e; color: white; border-radius: 50%; padding: 2px 7px; font-size: 12px; font-weight: bold; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal.active { display: flex; }
+        .search-bar { border-radius: 25px; transition: all 0.3s; }
+        .search-bar:focus { box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+    </style>
+</head>
+<body>
+
+    <header class="w-full h-56 bg-gradient-to-r from-blue-600 to-purple-700 flex items-center justify-center relative overflow-hidden">
+        <div class="text-center z-10 px-4">
+            <h1 class="text-white text-5xl font-black tracking-wider drop-shadow-lg">MORAD SHOPPING</h1>
+            <p class="text-blue-100 mt-2 italic">আপনার বিশ্বস্ত ইলেকট্রনিক গ্যাজেট পার্টনার</p>
+        </div>
+        <div class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+    </header>
+
+    <nav class="sticky top-0 bg-white/90 backdrop-blur-md shadow-lg p-4 flex justify-between items-center z-50 px-6">
+        <div class="relative w-3/4">
+            <input type="text" id="searchInput" onkeyup="searchProduct()" placeholder="কি খুঁজছেন? যেমন: ল্যাপটপ, এয়ার বার্ডস..." class="search-bar w-full border border-gray-300 px-5 py-2.5 focus:outline-none focus:border-blue-500">
+            <i class="fas fa-search absolute right-4 top-3.5 text-gray-400"></i>
+        </div>
+        <div class="relative cursor-pointer hover:scale-110 transition" onclick="openCart()">
+            <i class="fas fa-shopping-basket text-3xl text-blue-600"></i>
+            <span id="cartCount" class="cart-badge">0</span>
+        </div>
+    </nav>
+
+    <div class="bg-red-600 py-2 overflow-hidden">
+        <marquee class="font-bold text-white text-lg">📢 ডেলিভারি অফার: ঢাকার ভিতরে ৳৮৫ এবং ঢাকার বাহিরে সারা বাংলাদেশে ৳১৩০ ডেলিভারি চার্জ প্রযোজ্য। ৩ দিনের মধ্যে ক্যাশ অন ডেলিভারি!</marquee>
+    </div>
+
+    <main class="max-w-6xl mx-auto p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="productGrid">
+        </main>
+
+    <div id="orderModal" class="modal">
+        <div class="bg-white p-6 rounded-2xl w-11/12 max-w-md shadow-2xl animate-scale-up">
+            <h2 class="text-2xl font-bold mb-2 text-blue-700 border-b pb-2">অর্ডার ফর্ম</h2>
+            <div id="orderItemInfo" class="bg-blue-50 p-3 rounded-lg mb-4 border border-blue-100 text-sm italic"></div>
+            
+            <div class="space-y-3">
+                <input type="text" id="userName" placeholder="আপনার নাম লিখুন" class="w-full border p-3 rounded-lg focus:ring-2 ring-blue-400 outline-none">
+                <input type="tel" id="userPhone" placeholder="সঠিক ফোন নাম্বার" class="w-full border p-3 rounded-lg focus:ring-2 ring-blue-400 outline-none">
+                <textarea id="userAddress" placeholder="সম্পূর্ণ ঠিকানা (গ্রাম, থানা, জেলা)" class="w-full border p-3 rounded-lg h-24 focus:ring-2 ring-blue-400 outline-none"></textarea>
+            </div>
+
+            <div class="my-4 text-sm font-semibold text-gray-700">
+                🚀 চার্জ: ঢাকা <span class="text-red-500">৳৮৫</span> | ঢাকার বাইরে <span class="text-red-500">৳১৩০</span>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeModal('orderModal')" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition">বাতিল</button>
+                <button onclick="sendOrderToTelegram()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">অর্ডার কনফার্ম</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cartModal" class="modal">
+        <div class="bg-white p-6 rounded-2xl w-11/12 max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">আপনার কার্ট</h2>
+                <button onclick="closeModal('cartModal')" class="text-gray-500 hover:text-red-500 text-2xl">&times;</button>
+            </div>
+            <div id="cartItemsList" class="space-y-4"></div>
+            <div id="totalCartPrice" class="mt-4 text-right font-bold text-lg text-blue-700"></div>
+        </div>
+    </div>
+
+    <script>
+        // আপনার দেওয়া তথ্য
+        const botToken = "8759355717:AAEB33D_mMtVh4_mjGReF9wVJ7-hYQ1hKQw";
+        const chatId = "7211983994";
+
+        // প্রোডাক্ট ডাটাবেস (৫০টি স্যাম্পল)
+        const products = [];
+        const categories = ["ল্যাপটপ", "এয়ার বার্ডস", "এলইডি লাইট", "স্মার্ট ওয়াচ", "পাওয়ার ব্যাংক"];
+        
+        for (let i = 1; i <= 50; i++) {
+            products.push({
+                id: i,
+                name: `${categories[i % 5]} Model ${100 + i}`,
+                price: Math.floor(Math.random() * (5000 - 500) + 500),
+                img: `https://picsum.photos/seed/${i + 10}/300/300`,
+                desc: "উন্নত মানের ইলেকট্রনিক গ্যাজেট"
+            });
+        }
+
+        let cart = JSON.parse(localStorage.getItem('morad_cart')) || [];
+        let selectedProduct = null;
+
+        function displayProducts(data = products) {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = data.map(p => `
+                <div class="product-card flex flex-col h-full">
+                    <img src="${p.img}" class="w-full h-40 object-cover" alt="${p.name}">
+                    <div class="p-3 flex-1 flex flex-col">
+                        <h3 class="font-bold text-gray-800 text-sm h-10 overflow-hidden line-clamp-2">${p.name}</h3>
+                        <p class="text-blue-600 font-bold text-lg mt-1">৳${p.price}</p>
+                        <div class="mt-auto pt-3 space-y-2">
+                            <button onclick="openOrderModal(${p.id})" class="w-full bg-blue-600 text-white text-sm py-2 rounded-lg font-semibold hover:bg-blue-700 transition">অর্ডার করুন</button>
+                            <button onclick="addToCart(${p.id})" class="w-full bg-orange-100 text-orange-600 text-sm py-2 rounded-lg font-semibold hover:bg-orange-200 transition">কার্টে রাখুন</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            updateCartCount();
+        }
+
+        function searchProduct() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = products.filter(p => p.name.toLowerCase().includes(query));
+            displayProducts(filtered);
+        }
+
+        function addToCart(id) {
+            const product = products.find(p => p.id === id);
+            cart.push(product);
+            localStorage.setItem('morad_cart', JSON.stringify(cart));
+            updateCartCount();
+            alert("ব্যাগ-এ জমা হয়েছে!");
+        }
+
+        function updateCartCount() {
+            document.getElementById('cartCount').innerText = cart.length;
+        }
+
+        function openCart() {
+            const list = document.getElementById('cartItemsList');
+            let total = 0;
+            if (cart.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 text-gray-400"><i class="fas fa-box-open text-5xl mb-2"></i><p>কার্ট খালি!</p></div>`;
+            } else {
+                list.innerHTML = cart.map((p, index) => {
+                    total += p.price;
+                    return `
+                        <div class="flex items-center gap-3 border-b pb-3">
+                            <img src="${p.img}" class="w-16 h-16 rounded-lg shadow-sm">
+                            <div class="flex-1">
+                                <p class="font-bold text-gray-800 text-sm">${p.name}</p>
+                                <p class="text-blue-600 font-bold">৳${p.price}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="openOrderModalFromCart(${index})" class="bg-green-500 text-white p-2 rounded-lg text-xs"><i class="fas fa-check"></i></button>
+                                <button onclick="removeFromCart(${index})" class="bg-red-100 text-red-500 p-2 rounded-lg text-xs"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            document.getElementById('totalCartPrice').innerText = total > 0 ? `মোট মূল্য: ৳${total}` : "";
+            document.getElementById('cartModal').classList.add('active');
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            localStorage.setItem('morad_cart', JSON.stringify(cart));
+            openCart();
+            updateCartCount();
+        }
+
+        function openOrderModal(id) {
+            selectedProduct = products.find(p => p.id === id);
+            document.getElementById('orderItemInfo').innerText = `আপনি অর্ডার করছেন: ${selectedProduct.name} (৳${selectedProduct.price})`;
+            document.getElementById('orderModal').classList.add('active');
+        }
+
+        function openOrderModalFromCart(index) {
+            selectedProduct = cart[index];
+            closeModal('cartModal');
+            openOrderModal(selectedProduct.id);
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        async function sendOrderToTelegram() {
+            const name = document.getElementById('userName').value;
+            const phone = document.getElementById('userPhone').value;
+            const address = document.getElementById('userAddress').value;
+
+            if(!name || !phone || !address) return alert("অনুগ্রহ করে সব তথ্য দিন!");
+
+            const message = `
+🛍️ **নতুন অর্ডার - MORAD SHOPPING**
+━━━━━━━━━━━━━━
+👤 কাস্টমার: ${name}
+📞 ফোন: ${phone}
+🏠 ঠিকানা: ${address}
+━━━━━━━━━━━━━━
+📦 পণ্য: ${selectedProduct.name}
+💰 মূল্য: ৳${selectedProduct.price}
+🖼️ ছবি: ${selectedProduct.img}
+━━━━━━━━━━━━━━
+🚚 ডেলিভারি চার্জ: প্রযোজ্য
+            `;
+
+            const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
+
+            try {
+                const response = await fetch(url);
+                if(response.ok) {
+                    alert("ধন্যবাদ! আপনার অর্ডারটি গ্রহণ করা হয়েছে।");
+                    closeModal('orderModal');
+                    // ফর্ম ক্লিয়ার করা
+                    document.getElementById('userName').value = "";
+                    document.getElementById('userPhone').value = "";
+                    document.getElementById('userAddress').value = "";
+                } else {
+                    alert("টেলিগ্রাম এপিআই ত্রুটি!");
+                }
+            } catch (error) {
+                alert("ইন্টারনেট সংযোগ চেক করুন।");
+            }
+        }
+
+        displayProducts();
+    </script>
+</body>
+</html>
