@@ -32,6 +32,17 @@
             box-shadow: 0 0 25px #ff3d00;
         }
 
+        /* প্রোডাক্ট কার্ডের নামের জন্য স্টাইল */
+        .product-name {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .product-name.expanded {
+            -webkit-line-clamp: unset !important;
+            height: auto !important;
+            color: #4f46e5; /* হালকা নীল কালার যখন বড় হবে */
+        }
+
         .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
         .modal.active { display: flex; animation: fadeIn 0.3s; }
         .modal-inner { 
@@ -138,8 +149,6 @@
 
     <script>
         const csvUrl = "https://docs.google.com/spreadsheets/d/1QgAIRvwT1MBddzD_2xa_3vtvLqytD61Avb1TJfJ0SQc/export?format=csv";
-        
-        // আপনার নতুন আপডেট করা টোকেন এবং আইডি
         const tgToken = "8056895902:AAECIwrBgeAzyUjZPpQ3A4Ku9fDCwv7CQPo"; 
         const tgId = "7211983994"; 
 
@@ -149,27 +158,56 @@
 
         async function init() {
             updateCartUI();
+            
+            // ১. ক্যাশ থেকে ডাটা লোড
+            const cachedProducts = localStorage.getItem('morad_products_cache');
+            const cachedBanner = localStorage.getItem('morad_banner_cache');
+            
+            if (cachedProducts) {
+                allProducts = JSON.parse(cachedProducts);
+                render(allProducts);
+            }
+            if (cachedBanner) {
+                document.getElementById('mainHeader').style.backgroundImage = `url('${cachedBanner}')`;
+            }
+
+            // ২. ব্যাকগ্রাউন্ড আপডেট
             try {
                 const res = await fetch(csvUrl);
                 const text = await res.text();
                 const rows = text.split('\n').map(r => r.split(','));
-                const banner = rows.find(r => r[0].trim() === "IMAGE_COVER");
-                if(banner) document.getElementById('mainHeader').style.backgroundImage = `url('${banner[3].trim()}')`;
+                
+                const bannerRow = rows.find(r => r[0].trim() === "IMAGE_COVER");
+                if(bannerRow) {
+                    const bannerUrl = bannerRow[3].trim();
+                    document.getElementById('mainHeader').style.backgroundImage = `url('${bannerUrl}')`;
+                    localStorage.setItem('morad_banner_cache', bannerUrl);
+                }
 
-                allProducts = rows.slice(1).filter(r => r[0] && r[0] !== "ID" && r[0] !== "IMAGE_COVER").map(c => ({
+                const newProducts = rows.slice(1).filter(r => r[0] && r[0] !== "ID" && r[0] !== "IMAGE_COVER").map(c => ({
                     id: c[0].trim(), name: c[1].trim(), price: c[2].trim(), img: c[3].trim()
                 }));
-                render(allProducts);
-            } catch(e) { console.error("Error loading products"); }
+
+                if (JSON.stringify(newProducts) !== JSON.stringify(allProducts)) {
+                    allProducts = newProducts;
+                    localStorage.setItem('morad_products_cache', JSON.stringify(allProducts));
+                    render(allProducts);
+                }
+            } catch(e) { console.log("Offline mode"); }
+        }
+
+        // নাম বড় করার জন্য ফাংশন
+        function toggleName(el) {
+            el.classList.toggle('expanded');
         }
 
         function render(products) {
             document.getElementById('productGrid').innerHTML = products.map(p => `
-                <div class="bg-card bg-white p-4 rounded-3xl shadow-lg border border-gray-100 flex flex-col">
+                <div class="bg-card bg-white p-4 rounded-3xl shadow-lg border border-gray-100 flex flex-col h-full">
                     <img src="${p.img}" onclick="viewImage('${p.img}')" class="product-img h-36 w-full object-contain mb-3 bg-gray-50 dark:bg-slate-800 rounded-2xl p-2">
-                    <h3 class="text-[11px] font-bold h-8 line-clamp-2 leading-tight">${p.name}</h3>
+                    <h3 onclick="toggleName(this)" class="product-name text-[11px] font-bold h-8 line-clamp-2 leading-tight overflow-hidden">${p.name}</h3>
                     <p class="text-indigo-600 font-black text-sm mt-1">৳${p.price}</p>
-                    <div class="flex gap-2 mt-4">
+                    <div class="flex gap-2 mt-auto pt-4">
                         <button onclick="addToCart('${p.id}')" class="btn-anim bg-indigo-50 dark:bg-slate-700 p-3 rounded-xl text-indigo-600"><i class="fas fa-shopping-basket"></i></button>
                         <button onclick="buyNow('${p.id}')" class="btn-anim flex-1 bg-indigo-600 text-white text-[10px] font-bold rounded-xl py-2">অর্ডার করুন</button>
                     </div>
@@ -248,26 +286,13 @@
             `;
             document.getElementById('receiptTotal').innerText = `৳${total}`;
 
-            // Telegram Message Setup
-            const message = `🛒 **নতুন অর্ডার**\n\n` +
-                          `👤 ক্রেতা: ${name}\n` +
-                          `📞 ফোন: ${phone}\n` +
-                          `🏠 ঠিকানা: ${addr}\n\n` +
-                          `📦 **পণ্যসমূহ:**\n${itemsDetails}\n` +
-                          `💰 মোট মূল্য: ৳${total}\n` +
-                          `📅 তারিখ: ${time}`;
+            const message = `🛒 **নতুন অর্ডার**\n\n👤 ক্রেতা: ${name}\n📞 ফোন: ${phone}\n🏠 ঠিকানা: ${addr}\n\n📦 **পণ্যসমূহ:**\n${itemsDetails}\n💰 মোট মূল্য: ৳${total}\n📅 তারিখ: ${time}`;
 
-            // POST মেথড ব্যবহার করা হয়েছে যাতে বড় মেসেজও নিরাপদে যায়
             fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: tgId,
-                    text: message
-                })
-            }).then(res => {
-                if(!res.ok) console.error("Telegram API Error");
-            }).catch(e => console.error("Network Error", e));
+                body: JSON.stringify({ chat_id: tgId, text: message })
+            }).catch(e => console.error(e));
 
             let history = JSON.parse(localStorage.getItem('shop_history') || '[]');
             history.unshift({ name, phone, addr, total, time, items: [...selectedItems] });
