@@ -15,40 +15,18 @@
         
         body.dark { background: #080c14; color: #f1f5f9; }
         body.dark .bg-card { background: #111827 !important; border-color: #1f2937 !important; }
-        body.dark .text-bright-name { color: #ffeb3b !important; } 
-        body.dark .text-bright-loc { color: #00e676 !important; } 
-        body.dark .text-bright-user { color: #00d4ff !important; }
-
+        
         .brand-font { font-family: 'Righteous', cursive; white-space: nowrap; font-size: clamp(1.5rem, 8vw, 3.5rem); }
 
-        .btn-anim { 
-            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1); 
-            cursor: pointer; 
-        }
-        .btn-anim:active { 
-            transform: scale(0.85); 
-            background-color: #ff3d00 !important; 
-            color: white !important;
-            box-shadow: 0 0 25px #ff3d00;
-        }
+        .btn-anim { transition: all 0.3s ease; cursor: pointer; }
+        .btn-anim:active { transform: scale(0.9); }
 
-        /* প্রোডাক্ট কার্ডের নামের জন্য স্টাইল */
-        .product-name {
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .product-name.expanded {
-            -webkit-line-clamp: unset !important;
-            height: auto !important;
-            color: #4f46e5; /* হালকা নীল কালার যখন বড় হবে */
-        }
-
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(12px); padding: 20px; }
         .modal.active { display: flex; animation: fadeIn 0.3s; }
         .modal-inner { 
-            transform: scale(0.7); opacity: 0; transition: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); 
-            width: 92%; max-width: 420px; border-radius: 30px; border: 3px solid var(--accent);
-            box-shadow: 0 0 35px var(--neon);
+            transform: scale(0.7); opacity: 0; transition: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            width: 100%; max-width: 420px; border-radius: 30px; border: 2px solid var(--accent);
+            max-height: 90vh; overflow-y: auto;
         }
         .modal.active .modal-inner { transform: scale(1); opacity: 1; }
 
@@ -56,7 +34,9 @@
 
         header { background-size: cover; background-position: center; height: 250px; display: flex; align-items: center; justify-content: center; position: relative; }
         .header-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
-        .product-img { cursor: zoom-in; }
+        
+        .star-rating { color: #fbbf24; }
+        .desc-scroll { max-height: 200px; overflow-y: auto; scrollbar-width: thin; }
     </style>
 </head>
 <body class="light">
@@ -94,9 +74,27 @@
         <button class="btn-anim bg-indigo-900 w-14 h-14 rounded-full flex items-center justify-center text-white text-xl shadow-xl" onclick="document.body.classList.toggle('dark')"><i class="fas fa-adjust"></i></button>
     </div>
 
-    <div id="imgModal" class="modal" onclick="closeModal('imgModal')">
-        <div class="modal-inner bg-transparent border-none shadow-none">
-            <img id="fullImg" src="" class="max-w-full max-h-[85vh] rounded-3xl mx-auto">
+    <div id="descModal" class="modal" onclick="closeModal('descModal')">
+        <div class="modal-inner bg-card bg-white p-6" onclick="event.stopPropagation()">
+            <img id="descImg" src="" class="w-full h-48 object-contain rounded-2xl mb-4 bg-gray-50">
+            <h2 id="descTitle" class="font-bold text-xl text-indigo-600 mb-2"></h2>
+            <div id="descText" class="desc-scroll text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4"></div>
+            <button onclick="closeModal('descModal')" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold">বন্ধ করুন</button>
+        </div>
+    </div>
+
+    <div id="reviewModal" class="modal" onclick="closeModal('reviewModal')">
+        <div class="modal-inner bg-card bg-white p-6" onclick="event.stopPropagation()">
+            <h2 class="font-bold text-lg mb-4 text-indigo-600">রিভিউ ও রেটিং দিন</h2>
+            <div class="flex justify-center gap-2 mb-4 text-2xl" id="starInput">
+                <i class="far fa-star cursor-pointer star-btn" onclick="setRating(1)"></i>
+                <i class="far fa-star cursor-pointer star-btn" onclick="setRating(2)"></i>
+                <i class="far fa-star cursor-pointer star-btn" onclick="setRating(3)"></i>
+                <i class="far fa-star cursor-pointer star-btn" onclick="setRating(4)"></i>
+                <i class="far fa-star cursor-pointer star-btn" onclick="setRating(5)"></i>
+            </div>
+            <textarea id="reviewText" placeholder="আপনার মন্তব্য লিখুন..." class="w-full p-4 rounded-xl bg-gray-50 dark:bg-slate-700 outline-none h-24 mb-4"></textarea>
+            <button onclick="submitReview()" class="w-full bg-green-500 text-white py-3 rounded-xl font-bold">রিভিউ জমা দিন</button>
         </div>
     </div>
 
@@ -104,9 +102,9 @@
         <div class="modal-inner bg-card bg-white p-8" onclick="event.stopPropagation()">
             <h2 class="font-bold text-2xl mb-8 text-center text-indigo-600">ডেলিভারি তথ্য দিন</h2>
             <div class="space-y-4">
-                <input type="text" id="userName" placeholder="আপনার নাম" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-slate-700 border-none outline-none focus:ring-2 ring-indigo-400">
-                <input type="tel" id="userPhone" placeholder="ফোন নম্বর" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-slate-700 border-none outline-none focus:ring-2 ring-indigo-400">
-                <textarea id="userAddress" placeholder="পূর্ণ ঠিকানা" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-slate-700 border-none outline-none focus:ring-2 ring-indigo-400 h-24"></textarea>
+                <input type="text" id="userName" placeholder="আপনার নাম" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-slate-700 outline-none ring-indigo-400 focus:ring-2">
+                <input type="tel" id="userPhone" placeholder="ফোন নম্বর" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-slate-700 outline-none ring-indigo-400 focus:ring-2">
+                <textarea id="userAddress" placeholder="পূর্ণ ঠিকানা" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-slate-700 outline-none ring-indigo-400 focus:ring-2 h-24"></textarea>
                 <button onclick="confirmOrder()" class="btn-anim w-full bg-green-500 text-white py-5 rounded-2xl font-bold shadow-xl">অর্ডার কনফার্ম করুন</button>
             </div>
         </div>
@@ -154,81 +152,120 @@
 
         let allProducts = [];
         let cart = JSON.parse(localStorage.getItem('user_cart') || '[]');
-        let selectedItems = [];
+        let currentReviewId = null;
+        let selectedRating = 0;
 
         async function init() {
             updateCartUI();
-            
-            // ১. ক্যাশ থেকে ডাটা লোড
-            const cachedProducts = localStorage.getItem('morad_products_cache');
-            const cachedBanner = localStorage.getItem('morad_banner_cache');
-            
-            if (cachedProducts) {
-                allProducts = JSON.parse(cachedProducts);
-                render(allProducts);
-            }
-            if (cachedBanner) {
-                document.getElementById('mainHeader').style.backgroundImage = `url('${cachedBanner}')`;
-            }
-
-            // ২. ব্যাকগ্রাউন্ড আপডেট
             try {
                 const res = await fetch(csvUrl);
                 const text = await res.text();
                 const rows = text.split('\n').map(r => r.split(','));
                 
                 const bannerRow = rows.find(r => r[0].trim() === "IMAGE_COVER");
-                if(bannerRow) {
-                    const bannerUrl = bannerRow[3].trim();
-                    document.getElementById('mainHeader').style.backgroundImage = `url('${bannerUrl}')`;
-                    localStorage.setItem('morad_banner_cache', bannerUrl);
-                }
+                if(bannerRow) document.getElementById('mainHeader').style.backgroundImage = `url('${bannerRow[3].trim()}')`;
 
-                const newProducts = rows.slice(1).filter(r => r[0] && r[0] !== "ID" && r[0] !== "IMAGE_COVER").map(c => ({
-                    id: c[0].trim(), name: c[1].trim(), price: c[2].trim(), img: c[3].trim()
+                allProducts = rows.slice(1).filter(r => r[0] && r[0] !== "ID" && r[0] !== "IMAGE_COVER").map(c => ({
+                    id: c[0].trim(), 
+                    name: c[1].trim(), 
+                    price: c[2].trim(), 
+                    img: c[3].trim(),
+                    desc: c[4] ? c[4].trim() : "কোন বর্ণনা দেওয়া নেই।"
                 }));
-
-                if (JSON.stringify(newProducts) !== JSON.stringify(allProducts)) {
-                    allProducts = newProducts;
-                    localStorage.setItem('morad_products_cache', JSON.stringify(allProducts));
-                    render(allProducts);
-                }
-            } catch(e) { console.log("Offline mode"); }
-        }
-
-        // নাম বড় করার জন্য ফাংশন
-        function toggleName(el) {
-            el.classList.toggle('expanded');
+                render(allProducts);
+            } catch(e) { console.log("Error loading data"); }
         }
 
         function render(products) {
-            document.getElementById('productGrid').innerHTML = products.map(p => `
-                <div class="bg-card bg-white p-4 rounded-3xl shadow-lg border border-gray-100 flex flex-col h-full">
-                    <img src="${p.img}" onclick="viewImage('${p.img}')" class="product-img h-36 w-full object-contain mb-3 bg-gray-50 dark:bg-slate-800 rounded-2xl p-2">
-                    <h3 onclick="toggleName(this)" class="product-name text-[11px] font-bold h-8 line-clamp-2 leading-tight overflow-hidden">${p.name}</h3>
-                    <p class="text-indigo-600 font-black text-sm mt-1">৳${p.price}</p>
-                    <div class="flex gap-2 mt-auto pt-4">
-                        <button onclick="addToCart('${p.id}')" class="btn-anim bg-indigo-50 dark:bg-slate-700 p-3 rounded-xl text-indigo-600"><i class="fas fa-shopping-basket"></i></button>
-                        <button onclick="buyNow('${p.id}')" class="btn-anim flex-1 bg-indigo-600 text-white text-[10px] font-bold rounded-xl py-2">অর্ডার করুন</button>
+            document.getElementById('productGrid').innerHTML = products.map(p => {
+                const rating = getLocalRating(p.id);
+                return `
+                <div class="bg-card bg-white p-3 rounded-3xl shadow-lg border border-gray-100 flex flex-col h-full">
+                    <div class="relative">
+                        <img src="${p.img}" class="h-32 w-full object-contain mb-2 bg-gray-50 dark:bg-slate-800 rounded-2xl p-2">
+                        <button onclick="openDesc('${p.id}')" class="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full text-[10px] shadow-sm text-indigo-600"><i class="fas fa-info-circle"></i></button>
+                    </div>
+                    
+                    <h3 class="text-[11px] font-bold h-8 line-clamp-2 leading-tight mb-1">${p.name}</h3>
+                    
+                    <div class="flex items-center gap-1 mb-2 cursor-pointer" onclick="openReview('${p.id}')">
+                        <div class="star-rating text-[10px]">
+                            ${Array(5).fill(0).map((_, i) => `<i class="${i < rating ? 'fas' : 'far'} fa-star"></i>`).join('')}
+                        </div>
+                        <span class="text-[9px] text-gray-400">রিভিউ</span>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-auto">
+                        <p class="text-indigo-600 font-black text-sm">৳${p.price}</p>
+                        <button onclick="openDesc('${p.id}')" class="text-[9px] text-indigo-500 font-bold border-b border-indigo-200">Description</button>
+                    </div>
+
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="addToCart('${p.id}')" class="btn-anim bg-indigo-50 dark:bg-slate-700 p-2.5 rounded-xl text-indigo-600"><i class="fas fa-shopping-basket"></i></button>
+                        <button onclick="buyNow('${p.id}')" class="btn-anim flex-1 bg-indigo-600 text-white text-[10px] font-bold rounded-xl py-2">অর্ডার</button>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
-        function viewImage(url) {
-            document.getElementById('fullImg').src = url;
-            document.getElementById('imgModal').classList.add('active');
+        // Feature: Description Logic
+        function openDesc(id) {
+            const p = allProducts.find(x => x.id === id);
+            document.getElementById('descImg').src = p.img;
+            document.getElementById('descTitle').innerText = p.name;
+            document.getElementById('descText').innerText = p.desc;
+            document.getElementById('descModal').classList.add('active');
         }
 
+        // Feature: Review Logic
+        function openReview(id) {
+            currentReviewId = id;
+            selectedRating = 0;
+            resetStars();
+            document.getElementById('reviewText').value = "";
+            document.getElementById('reviewModal').classList.add('active');
+        }
+
+        function setRating(n) {
+            selectedRating = n;
+            const stars = document.querySelectorAll('.star-btn');
+            stars.forEach((s, i) => {
+                s.classList.toggle('fas', i < n);
+                s.classList.toggle('far', i >= n);
+            });
+        }
+
+        function resetStars() {
+            document.querySelectorAll('.star-btn').forEach(s => {
+                s.classList.replace('fas', 'far');
+            });
+        }
+
+        function submitReview() {
+            if(selectedRating === 0) return alert("রেটিং সিলেক্ট করুন!");
+            const comment = document.getElementById('reviewText').value;
+            
+            let reviews = JSON.parse(localStorage.getItem('user_reviews') || '{}');
+            reviews[currentReviewId] = { rating: selectedRating, comment: comment };
+            localStorage.setItem('user_reviews', JSON.stringify(reviews));
+            
+            closeModal('reviewModal');
+            render(allProducts);
+            alert("আপনার রিভিউ সেভ হয়েছে!");
+        }
+
+        function getLocalRating(id) {
+            const reviews = JSON.parse(localStorage.getItem('user_reviews') || '{}');
+            return reviews[id] ? reviews[id].rating : 5; // Default 5 star
+        }
+
+        // --- Existing System Functions ---
         function addToCart(id) {
             const p = allProducts.find(x => x.id === id);
             cart.push({...p, selected: true});
-            saveCart();
-            updateCartUI();
+            saveCart(); updateCartUI();
         }
-
         function saveCart() { localStorage.setItem('user_cart', JSON.stringify(cart)); }
-
         function updateCartUI() {
             document.getElementById('cartCount').innerText = cart.length;
             let total = 0;
@@ -243,91 +280,60 @@
             }).join('') : '<p class="text-center text-gray-400 py-5">কার্ড খালি!</p>';
             document.getElementById('cartTotal').innerText = `৳${total}`;
         }
-
         function toggleCartItem(i) { cart[i].selected = !cart[i].selected; saveCart(); updateCartUI(); }
         function removeFromCart(i) { cart.splice(i, 1); saveCart(); updateCartUI(); }
         function openCart() { document.getElementById('cartModal').classList.add('active'); }
         function openHistory() { loadHistory(); document.getElementById('historyModal').classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-        function buyNow(id) {
-            selectedItems = [allProducts.find(x => x.id === id)];
-            document.getElementById('orderModal').classList.add('active');
-        }
-
-        function checkout() {
-            selectedItems = cart.filter(p => p.selected);
-            if(selectedItems.length === 0) return alert("পণ্য সিলেক্ট করুন!");
-            closeModal('cartModal');
-            document.getElementById('orderModal').classList.add('active');
-        }
+        function buyNow(id) { selectedItems = [allProducts.find(x => x.id === id)]; document.getElementById('orderModal').classList.add('active'); }
+        function checkout() { selectedItems = cart.filter(p => p.selected); if(!selectedItems.length) return alert("পণ্য সিলেক্ট করুন!"); closeModal('cartModal'); document.getElementById('orderModal').classList.add('active'); }
 
         function confirmOrder() {
             const name = document.getElementById('userName').value;
             const phone = document.getElementById('userPhone').value;
             const addr = document.getElementById('userAddress').value;
             if(!name || !phone || !addr) return alert("সব তথ্য দিন!");
-
             const time = new Date().toLocaleString('bn-BD');
-            let total = 0;
-            let itemsDetails = ""; 
+            let total = 0; let itemsDetails = "";
             const itemsHtml = selectedItems.map((p, index) => {
-                total += parseInt(p.price);
-                itemsDetails += `${index + 1}. ${p.name} - ৳${p.price}\n`;
+                total += parseInt(p.price); itemsDetails += `${index + 1}. ${p.name}\n`;
                 return `<div class="flex justify-between"><span>• ${p.name}</span><b>৳${p.price}</b></div>`;
             }).join('');
-
             document.getElementById('ticketTime').innerText = `তারিখ: ${time}`;
-            document.getElementById('receiptContent').innerHTML = `
-                <p><b>ক্রেতা:</b> ${name}</p>
-                <p><b>ফোন:</b> ${phone}</p>
-                <p><b>ঠিকানা:</b> ${addr}</p>
-                <div class="mt-4 pt-2 border-t"><b>পণ্যসমূহ:</b>${itemsHtml}</div>
-            `;
+            document.getElementById('receiptContent').innerHTML = `<p><b>ক্রেতা:</b> ${name}</p><p><b>ফোন:</b> ${phone}</p><p><b>ঠিকানা:</b> ${addr}</p><div class="mt-4 pt-2 border-t"><b>পণ্যসমূহ:</b>${itemsHtml}</div>`;
             document.getElementById('receiptTotal').innerText = `৳${total}`;
-
-            const message = `🛒 **নতুন অর্ডার**\n\n👤 ক্রেতা: ${name}\n📞 ফোন: ${phone}\n🏠 ঠিকানা: ${addr}\n\n📦 **পণ্যসমূহ:**\n${itemsDetails}\n💰 মোট মূল্য: ৳${total}\n📅 তারিখ: ${time}`;
-
-            fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: tgId, text: message })
-            }).catch(e => console.error(e));
-
+            const message = `🛒 **নতুন অর্ডার**\n\n👤 ক্রেতা: ${name}\n📞 ফোন: ${phone}\n🏠 ঠিকানা: ${addr}\n\n📦 পণ্যসমূহ:\n${itemsDetails}\n💰 মোট: ৳${total}`;
+            fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: tgId, text: message }) });
             let history = JSON.parse(localStorage.getItem('shop_history') || '[]');
-            history.unshift({ name, phone, addr, total, time, items: [...selectedItems] });
+            history.unshift({ name, total, time, addr, items: [...selectedItems] });
             localStorage.setItem('shop_history', JSON.stringify(history));
-
             cart = cart.filter(p => !selectedItems.includes(p));
-            saveCart(); updateCartUI();
-            closeModal('orderModal');
-            document.getElementById('successModal').classList.add('active');
+            saveCart(); updateCartUI(); closeModal('orderModal'); document.getElementById('successModal').classList.add('active');
         }
 
         function downloadSlip() {
-            const btn = document.getElementById('saveBtn');
-            btn.innerText = "Downloading..."; btn.disabled = true;
             html2canvas(document.getElementById('captureArea'), { scale: 3 }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `Order_Receipt_${Date.now()}.png`;
+                const link = document.createElement('a'); link.download = `Receipt_${Date.now()}.png`;
                 link.href = canvas.toDataURL(); link.click();
-                setTimeout(() => { closeModal('successModal'); btn.innerText = "সেভ রশিদ"; btn.disabled = false; }, 1000);
+                closeModal('successModal');
             });
         }
 
-        function loadHistory() {
+                function loadHistory() {
             const history = JSON.parse(localStorage.getItem('shop_history') || '[]');
             document.getElementById('historyList').innerHTML = history.length ? history.map(h => `
-                <div class="bg-gray-50 dark:bg-slate-800 p-4 rounded-3xl border border-indigo-100">
-                    <div class="text-[9px] text-gray-400 mb-2">${h.time} | ৳${h.total}</div>
-                    <p class="text-bright-user font-bold text-[12px] mb-1">${h.name}</p>
-                    <p class="text-bright-loc text-[10px] mb-3"><i class="fas fa-map-marker-alt"></i> ${h.addr}</p>
-                    ${h.items.map(it => `
-                        <div class="flex justify-between items-center border-t border-dashed py-1">
-                            <span class="text-bright-name text-[10px] truncate w-36">${it.name}</span>
-                            <button onclick="buyNow('${it.id}')" class="btn-anim bg-indigo-600 text-white text-[8px] px-2 py-1 rounded">Order Again</button>
-                        </div>
-                    `).join('')}
+                <div class="bg-gray-50 dark:bg-slate-800 p-4 rounded-3xl border border-indigo-100 mb-2 text-[10px]">
+                    <div class="text-gray-400 mb-1">${h.time} | ৳${h.total}</div>
+                    <p class="font-bold text-indigo-500">${h.name}</p>
+                    <p class="mb-2"><i class="fas fa-map-marker-alt"></i> ${h.addr}</p>
+                    <div class="space-y-1">
+                        ${h.items.map(it => `
+                            <div class="flex justify-between items-center border-t border-dashed py-1">
+                                <span class="truncate w-36">${it.name}</span>
+                                <button onclick="buyNow('${it.id}')" class="bg-indigo-600 text-white text-[8px] px-2 py-1 rounded">Order Again</button>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             `).join('') : '<p class="text-center text-gray-400 py-10">কোন হিস্ট্রি নেই</p>';
         }
